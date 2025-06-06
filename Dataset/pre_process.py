@@ -1,15 +1,9 @@
 import pandas as pd
 import os
 
-DROP_COLUMNS = []  # 这个变量在您的原始代码段中已定义但未使用。
 years = range(2015, 2020)
 excel_files = [f"{year}.xlsx" for year in years]
 all_data_frames = []
-
-# 请确保您的Excel文件与脚本位于同一目录，
-# 或提供它们的完整路径。
-# 例如，如果它们位于名为 'data' 的子目录中：
-# excel_files = [os.path.join('data', f"{year}.xlsx") for year in years]
 
 print("尝试读取以下文件：")
 for file_path in excel_files:
@@ -19,11 +13,7 @@ for file_path in excel_files:
 
 for file in excel_files:
     try:
-        # 在尝试读取文件之前检查文件是否存在是一个好习惯
         if os.path.exists(file):
-            # 您也可以尝试显式告知pandas解析日期，
-            # 但我们将在连接后进行更稳健的转换。
-            # df_temp = pd.read_excel(file, parse_dates=['Survey date'])
             df_temp = pd.read_excel(file)
             all_data_frames.append(df_temp)
             print(f"成功读取 {file}，形状：{df_temp.shape}")
@@ -56,8 +46,7 @@ if "Survey date" in df.columns:
     )
     print(f"连接后（转换前）'Survey date' 的示例值：\n{df['Survey date'].head(10)}")
 
-    # --- 稳健的日期转换 ---
-    # 步骤1：转换可能是Excel序列日期的数值。
+    # 转换可能是Excel序列日期的数值。
     # 创建一个临时的数值型调查日期序列，对于非数值部分强制转换为错误 (NaN)。
     numeric_survey_dates = pd.to_numeric(df["Survey date"], errors="coerce")
 
@@ -92,13 +81,10 @@ else:
     print("错误：在合并后的DataFrame中未找到 'Survey date' 列。")
 
 
-print(f"\n原始数据框形状（日期转换后）：{df.shape}")  # 这里的 df 包含转换后的日期
+print(f"\n原始数据框形状（日期转换后）：{df.shape}")
 print(f"原始数据中有 {df.isnull().any().sum()} 列包含至少一个缺失值。")
-# print("\n原始数据中各列缺失值数量:")
-# print(df.isnull().sum()[df.isnull().sum() > 0])
 
-
-# 步骤 1: 删除缺失值超过10%的列
+# 删除缺失值超过10%的列
 missing_percentage = df.isnull().sum() / len(df)
 cols_to_drop = missing_percentage[missing_percentage > 0.1].index
 df_after_cols_dropped = df.copy()
@@ -111,7 +97,7 @@ if len(cols_to_drop) > 0:
 else:
     print("\n没有列因缺失值超过10%而被删除。")
 
-# 步骤 2: 删除包含任何缺失值的行 (在剩余列中)
+# 删除包含任何缺失值的行 (在剩余列中)
 rows_before_dropna = len(df_after_cols_dropped)
 df_processed = df_after_cols_dropped.dropna()
 rows_after_dropna = len(df_processed)
@@ -133,6 +119,19 @@ if df_processed.empty:
         "\n注意：经过预处理后，数据框为空。这可能是因为原始数据量较小，且缺失值较多，"
         "或者日期转换导致许多行被识别为包含NaT并被后续步骤删除。"
     )
-
+# 进行一些One hot处理
+# df_processed = pd.get_dummies(
+#     df_processed,
+#     columns=[
+#         "Nationality",
+#         "Country of residence",
+#         "Gender",
+#         "Immigration airport",
+#         "Purpose of visit to CITY",
+#         "Travel type",
+#         "Most desired place",
+#          "Most satisfied place"
+#     ],
+# )
 df_processed.to_csv("processed_data.csv", index=False)
 print("\n处理后的数据已保存到 processed_data.csv")
